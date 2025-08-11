@@ -2,8 +2,9 @@ create database gaming;
 use gaming;
 
 CREATE TABLE `game` (
-  `id` int PRIMARY KEY auto_increment,
+  `game_id` int PRIMARY KEY auto_increment,
   `category_id` int,
+  `game_code` varchar(20),
   `create_at` datetime,
   `update_at` datetime
 );
@@ -34,7 +35,7 @@ CREATE TABLE `language` (
 
 ALTER TABLE `game` ADD FOREIGN KEY (`category_id`) REFERENCES `category` (`category_id`);
 
-ALTER TABLE `game_name` ADD FOREIGN KEY (`game_id`) REFERENCES `game` (`id`);
+ALTER TABLE `game_name` ADD FOREIGN KEY (`game_id`) REFERENCES `game` (`game_id`);
 
 ALTER TABLE `game_name` ADD FOREIGN KEY (`language_id`) REFERENCES `language` (`language_id`);
 

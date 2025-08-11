@@ -1,9 +1,9 @@
 package com.example.game.repository;
 
-import com.example.game.entity.Game;
+import com.example.game.entity.GameName;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface GameCategory extends JpaRepository<Game, Integer> {
+public interface GameNameRepository extends JpaRepository<GameName, Integer> {
 }

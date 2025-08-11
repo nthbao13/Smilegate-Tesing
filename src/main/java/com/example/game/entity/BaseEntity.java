@@ -14,10 +14,10 @@ public class BaseEntity {
 
     @CreatedDate
     @Column(updatable = false)
-    private LocalDateTime createdAt;
+    private LocalDateTime createAt;
 
     @LastModifiedDate
     @Column(insertable = false)
-    private LocalDateTime updatedAt;
+    private LocalDateTime updateAt;
 
 }

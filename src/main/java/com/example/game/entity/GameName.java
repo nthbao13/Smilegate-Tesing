@@ -11,7 +11,7 @@ import lombok.Setter;
 public class GameName extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private int nameId;
 
     private boolean isDefault;
 
@@ -20,6 +20,6 @@ public class GameName extends BaseEntity {
     private String languageId;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "id", referencedColumnName = "Id")
+    @JoinColumn(name = "game_id", referencedColumnName = "gameId")
     private Game game;
 }
