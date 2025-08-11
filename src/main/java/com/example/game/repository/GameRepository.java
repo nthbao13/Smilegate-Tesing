@@ -16,4 +16,6 @@ public interface GameRepository extends JpaRepository<Game, Integer> {
     Page<Game> searchGames(@Param("keyword") String keyword,
                            @Param("categoryId") Integer categoryId,
                            Pageable pageable);
+
+    Game findByGameCode(String gameCode);
 }

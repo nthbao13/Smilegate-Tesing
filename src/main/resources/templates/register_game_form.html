@@ -1,0 +1,579 @@
+<div id="languageContainer">
+  <!-- Default English Entry -->
+  <div class="language-entry default-language" data-language-index="0">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="language-badge default-badge">
+                                        <i class="fas fa-flag me-2"></i>English (Default)
+                                    </span>
+      <div class="form-check">
+        <input type="checkbox" class="form-check-input default-check"
+               id="default0" checked disabled>
+        <label class="form-check-label" for="default0">Default Language</label>
+      </div>
+    </div>
+
+    <div class="row g-2">
+      <div class="col-md-4">
+        <select class="form-select language-select" name="gameNameRequests[0].languageId" required>
+          <option value="EN" selected>English</option>
+        </select>
+      </div>
+      <div class="col-md-8">
+        <input type="text" class="form-control game-name-input"
+               name="gameNameRequests[0].name"
+               placeholder="Enter game name in English" required>
+        <input type="hidden" name="gameNameRequests[0].isDefault" value="true">
+      </div>
+    </div>
+    <div class="validation-error"></div>
+  </div>
+</div>
+
+<div class="form-text mt-2">
+  <i class="fas fa-info-circle me-1"></i>
+  You must have at least one language. One language must be set as default.
+</div>
+<div class="validation-error" th:if="${#fields.hasErrors('gameNameRequests')}"
+     th:errors="*{gameNameRequests}"></div>
+</div>
+
+<!-- Action Buttons -->
+<div class="form-section animate-slide-in">
+  <div class="d-flex justify-content-between">
+    <a href="/games" class="btn btn-outline-secondary btn-lg">
+      <i class="fas fa-arrow-left me-2"></i>Cancel
+    </a>
+    <div>
+      <button type="button" class="btn btn-outline-primary btn-lg me-2" id="previewBtn">
+        <i class="fas fa-eye me-2"></i>Preview
+      </button>
+      <button type="submit" class="btn btn-primary btn-lg">
+        <i class="fas fa-save me-2"></i>Register Game
+      </button>
+    </div>
+  </div>
+</div>
+</form>
+</div>
+</div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-eye me-2"></i>Game Preview
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-md-6">
+            <h6>Game Code:</h6>
+            <p id="preview-gameCode" class="bg-light p-2 rounded"></p>
+          </div>
+          <div class="col-md-6">
+            <h6>Category:</h6>
+            <p id="preview-category" class="bg-light p-2 rounded"></p>
+          </div>
+        </div>
+        <div class="mt-3">
+          <h6>Multilingual Names:</h6>
+          <div id="preview-languages"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<script>
+  let languageIndex = 1;
+  const supportedLanguages = [
+      { code: 'EN', name: 'English' },
+      { code: 'KO', name: 'Korean' },
+      { code: 'JA', name: 'Japanese' }
+  ];
+
+  // Add new language entry
+  document.getElementById('addLanguageBtn').addEventListener('click', function() {
+      const container = document.getElementById('languageContainer');
+      const usedLanguages = Array.from(document.querySelectorAll('.language-select')).map(select => select.value);
+      const availableLanguages = supportedLanguages.filter(lang => !usedLanguages.includes(lang.code));
+
+      if (availableLanguages.length === 0) {
+          alert('All supported languages have been added.');
+          return;
+      }
+
+      const languageEntry = document.createElement('div');
+      languageEntry.className = 'language-entry animate-slide-in';
+      languageEntry.setAttribute('data-language-index', languageIndex);
+
+      languageEntry.innerHTML = `
+          <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="language-badge">
+                  <i class="fas fa-flag me-2"></i>Additional Language
+              </span>
+              <div class="d-flex gap-2">
+                  <div class="form-check">
+                      <input type="checkbox" class="form-check-input default-check"
+                             id="default${languageIndex}" onchange="handleDefaultChange(this)">
+                      <label class="form-check-label" for="default${languageIndex}">Set as Default</label>
+                  </div>
+                  <button type="button" class="btn btn-danger btn-sm" onclick="removeLanguage(this)">
+                      <i class="fas fa-trash"></i>
+                  </button>
+              </div>
+          </div>
+
+          <div class="row g-2">
+              <div class="col-md-4">
+                  <select class="form-select language-select" name="gameNameRequests[${languageIndex}].languageId" required onchange="updateLanguageLabel(this)">
+                      <option value="">Select Language</option>
+                      ${availableLanguages.map(lang => `<option value="${lang.code}">${lang.name}</option>`).join('')}
+                  </select>
+              </div>
+              <div class="col-md-8">
+                  <input type="text" class="form-control game-name-input"
+                         name="gameNameRequests[${languageIndex}].name"
+                         placeholder="Enter game name" required>
+                  <input type="hidden" name="gameNameRequests[${languageIndex}].isDefault" value="false" class="is-default-input">
+              </div>
+          </div>
+          <div class="validation-error"></div>
+      `;
+
+      container.appendChild(languageEntry);
+      languageIndex++;
+  });
+
+  function removeLanguage(button) {
+      const entry = button.closest('.language-entry');
+      const wasDefault = entry.querySelector('.default-check').checked;
+
+      entry.remove();
+
+      // If we removed the default language, make English default again
+      if (wasDefault) {
+          const firstEntry = document.querySelector('.language-entry[data-language-index="0"]');
+          if (firstEntry) {
+              const defaultCheck = firstEntry.querySelector('.default-check');
+              const hiddenInput = firstEntry.querySelector('.is-default-input') ||
+                                firstEntry.querySelector('input[name$=".isDefault"]');
+
+              defaultCheck.checked = true;
+              defaultCheck.disabled = true;
+              if (hiddenInput) hiddenInput.value = 'true';
+              firstEntry.classList.add('default-language');
+
+              const badge = firstEntry.querySelector('.language-badge');
+              badge.textContent = 'English (Default)';
+              badge.className = 'language-badge default-badge';
+          }
+      }
+
+      // Re-index the remaining entries
+      reindexLanguageEntries();
+  }
+
+  function handleDefaultChange(checkbox) {
+      if (checkbox.checked) {
+          // Uncheck all other default checkboxes
+          document.querySelectorAll('.default-check').forEach(cb => {
+              if (cb !== checkbox) {
+                  cb.checked = false;
+                  cb.disabled = false;
+
+                  const entry = cb.closest('.language-entry');
+                  entry.classList.remove('default-language');
+
+                  const hiddenInput = entry.querySelector('.is-default-input') ||
+                                    entry.querySelector('input[name$=".isDefault"]');
+                  if (hiddenInput) hiddenInput.value = 'false';
+
+                  const badge = entry.querySelector('.language-badge');
+                  badge.classList.remove('default-badge');
+                  updateLanguageBadge(entry);
+              }
+          });
+
+          // Set this one as default
+          checkbox.disabled = true;
+          const entry = checkbox.closest('.language-entry');
+          entry.classList.add('default-language');
+
+          const hiddenInput = entry.querySelector('.is-default-input') ||
+                            entry.querySelector('input[name$=".isDefault"]');
+          if (hiddenInput) hiddenInput.value = 'true';
+
+          const badge = entry.querySelector('.language-badge');
+          badge.classList.add('default-badge');
+          updateLanguageBadge(entry);
+      }
+  }
+
+  function updateLanguageLabel(select) {
+      const entry = select.closest('.language-entry');
+      updateLanguageBadge(entry);
+  }
+
+  function updateLanguageBadge(entry) {
+      const select = entry.querySelector('.language-select');
+      const badge = entry.querySelector('.language-badge');
+      const isDefault = entry.querySelector('.default-check').checked;
+
+      const selectedLang = supportedLanguages.find(lang => lang.code === select.value);
+      const langName = selectedLang ? selectedLang.name : 'Additional Language';
+
+      badge.innerHTML = `<i class="fas fa-flag me-2"></i>${langName}${isDefault ? ' (Default)' : ''}`;
+  }
+
+  function reindexLanguageEntries() {
+      const entries = document.querySelectorAll('.language-entry');
+      entries.forEach((entry, index) => {
+          entry.setAttribute('data-language-index', index);
+
+          const inputs = entry.querySelectorAll('input, select');
+          inputs.forEach(input => {
+              if (input.name) {
+                  input.name = input.name.replace(/\[\d+\]/, `[${index}]`);
+              }
+              if (input.id && input.id.startsWith('default')) {
+                  input.id = `default${index}`;
+                  const label = entry.querySelector(`label[for^="default"]`);
+                  if (label) label.setAttribute('for', `default${index}`);
+              }
+          });
+      });
+
+      languageIndex = entries.length;
+  }
+
+  // Preview functionality
+  document.getElementById('previewBtn').addEventListener('click', function() {
+      const gameCode = document.getElementById('gameCode').value;
+      const categorySelect = document.getElementById('categoryId');
+      const categoryText = categorySelect.options[categorySelect.selectedIndex].text;
+
+      document.getElementById('preview-gameCode').textContent = gameCode || 'Not specified';
+      document.getElementById('preview-category').textContent = categoryText !== 'Select a category' ? categoryText : 'Not specified';
+
+      const languagesHtml = Array.from(document.querySelectorAll('.language-entry')).map(entry => {
+          const langSelect = entry.querySelector('.language-select');
+          const nameInput = entry.querySelector('.game-name-input');
+          const isDefault = entry.querySelector('.default-check').checked;
+          const langName = supportedLanguages.find(l => l.code === langSelect.value)?.name || 'Unknown';
+
+          return `
+              <div class="d-flex justify-content-between align-items-center p-2 mb-2 bg-light rounded">
+                  <strong>${langName}${isDefault ? ' (Default)' : ''}:</strong>
+                  <span>${nameInput.value || 'Not specified'}</span>
+              </div>
+          `;
+      }).join('');
+
+      document.getElementById('preview-languages').innerHTML = languagesHtml;
+
+      new bootstrap.Modal(document.getElementById('previewModal')).show();
+  });
+
+  // Form validation
+  document.querySelector('form').addEventListener('submit', function(e) {
+      const languageEntries = document.querySelectorAll('.language-entry');
+      const hasDefault = Array.from(languageEntries).some(entry =>
+          entry.querySelector('.default-check').checked
+      );
+
+      if (!hasDefault) {
+          e.preventDefault();
+          alert('Please set one language as default.');
+          return false;
+      }
+
+      // Check for duplicate languages
+      const selectedLanguages = Array.from(document.querySelectorAll('.language-select')).map(s => s.value);
+      const duplicates = selectedLanguages.filter((lang, index) => selectedLanguages.indexOf(lang) !== index);
+
+      if (duplicates.length > 0) {
+          e.preventDefault();
+          alert('Please select different languages for each entry.');
+          return false;
+      }
+  });
+
+  // Auto-save form data to prevent loss
+  const formInputs = document.querySelectorAll('input, select');
+  formInputs.forEach(input => {
+      input.addEventListener('input', function() {
+          // Could implement auto-save to localStorage here if needed
+      });
+  });
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Management - Register New Game</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .main-container {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        margin: 2rem auto;
+        overflow: hidden;
+        max-width: 1000px;
+    }
+
+    .header-section {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        color: white;
+        padding: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .header-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="2" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1.5" fill="white" opacity="0.08"/><circle cx="50" cy="10" r="1" fill="white" opacity="0.12"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    }
+
+    .header-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    .form-container {
+        padding: 2rem;
+    }
+
+    .form-section {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        border-left: 5px solid #4f46e5;
+    }
+
+    .form-section h4 {
+        color: #4f46e5;
+        margin-bottom: 1.5rem;
+        font-weight: 700;
+    }
+
+    .form-control, .form-select {
+        border-radius: 10px;
+        border: 2px solid #e5e7eb;
+        padding: 0.75rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        border: none;
+        border-radius: 10px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(79, 70, 229, 0.4);
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border: none;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-danger {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        border: none;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-danger:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+    }
+
+    .language-entry {
+        background: #f8fafc;
+        border: 2px dashed #cbd5e1;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .language-entry:hover {
+        border-color: #4f46e5;
+        background: #f1f5f9;
+    }
+
+    .language-entry.default-language {
+        border-color: #10b981;
+        background: #ecfdf5;
+    }
+
+    .language-badge {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        display: inline-block;
+        margin-bottom: 0.5rem;
+    }
+
+    .default-badge {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+
+    .validation-error {
+        color: #ef4444;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.5rem;
+    }
+
+    .required-field::after {
+        content: "*";
+        color: #ef4444;
+        margin-left: 0.25rem;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-slide-in {
+        animation: slideIn 0.5s ease-out;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="main-container">
+    <!-- Header Section -->
+    <div class="header-section">
+      <div class="header-content">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h1 class="mb-2">
+              <i class="fas fa-plus-circle me-3"></i>Register New Game
+            </h1>
+            <p class="mb-0 opacity-90">Create a new game with multilingual support</p>
+          </div>
+          <div>
+            <a href="/games" class="btn btn-light">
+              <i class="fas fa-arrow-left me-2"></i>Back to Game List
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-container">
+      <form th:action="@{/games/register}" method="post" th:object="${inputGameRequest}">
+        <!-- Basic Game Information Section -->
+        <div class="form-section animate-slide-in">
+          <h4><i class="fas fa-gamepad me-2"></i>Basic Game Information</h4>
+
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label for="gameCode" class="form-label required-field">Game Code</label>
+              <input type="text" class="form-control" id="gameCode" name="gameCode"
+                     th:field="*{gameCode}" placeholder="Enter unique game code (min 5 characters)"
+                     required minlength="5">
+              <div class="validation-error" th:if="${#fields.hasErrors('gameCode')}"
+                   th:errors="*{gameCode}"></div>
+              <div class="form-text">
+                <i class="fas fa-info-circle me-1"></i>Game code must be at least 5 characters long and unique
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <label for="categoryId" class="form-label required-field">Game Category</label>
+              <select class="form-select" id="categoryId" name="categoryRequest.categoryId" required>
+                <option value="">Select a category</option>
+                <option th:each="category : ${categories}"
+                        th:value="${category.categoryId}"
+                        th:text="${category.categoryName}">
+                </option>
+              </select>
+              <div class="validation-error" th:if="${#fields.hasErrors('categoryRequest')}"
+                   th:errors="*{categoryRequest}"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Multilingual Names Section -->
+        <div class="form-section animate-slide-in">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4><i class="fas fa-language me-2"></i>Multilingual Game Names</h4>
+            <button type="button" class="btn btn-success" id="addLanguageBtn">
+              <i class="fas fa-plus me-2"></i>Add Language
+            </button>
+          </div>
+
+          <div id="languageContainer">
+            <!-- Default English Entry -->
+            <div class="language-entry default-language" data-language-index="0">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="language-badge default-badge">
+                                        <i class="fas fa-flag me-2"></i>English (Default)
+                                    </span>
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input default-check"
+                         id="default0" checked disabled>
+                  <label class="form-check

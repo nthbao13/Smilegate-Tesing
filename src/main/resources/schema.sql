@@ -4,7 +4,7 @@ use gaming;
 CREATE TABLE `game` (
   `game_id` int PRIMARY KEY auto_increment,
   `category_id` int,
-  `game_code` varchar(20),
+  `game_code` varchar(20) unique,
   `create_at` datetime,
   `update_at` datetime
 );

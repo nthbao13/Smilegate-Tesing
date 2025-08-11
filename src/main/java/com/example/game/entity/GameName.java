@@ -1,12 +1,14 @@
 package com.example.game.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Getter
 @Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "game_name")
 public class GameName extends BaseEntity {
     @Id
