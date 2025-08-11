@@ -48,7 +48,7 @@ public class GameController {
         ModelAndView modelAndView = new ModelAndView("game_list.html");
         int pageSize = Constants.PAGE_LIMIT;
 
-        List<CategoryResponse> categoryResponses = categoryService.findAll();
+        List<CategoryResponse> categoryResponses = categoryService.getFullCategories();
         Page<GameResponse> gameDTOS = gameService.getGames(page, pageSize, keyword, category);
 
         modelAndView.addObject("categories", categoryResponses);
@@ -63,10 +63,11 @@ public class GameController {
     @GetMapping("/register")
     public ModelAndView displayRegisterPage(Model model) {
         ModelAndView modelAndView = new ModelAndView("register_game_form.html");
-        List<CategoryResponse> categoryResponses = categoryService.findAll();
+        List<CategoryResponse> categoryResponses = categoryService.getFullCategories();
         List<LanguageResponse> languageResponses = languageService.getFullLanguages();
         modelAndView.addObject("languages", languageResponses);
         modelAndView.addObject("categories", categoryResponses);
+        modelAndView.addObject("inputGameRequest", new InputGameRequest());
         return modelAndView;
     }
 
@@ -74,19 +75,25 @@ public class GameController {
     public String registerGame(
             @Valid @ModelAttribute("inputGameRequest") InputGameRequest inputGameRequest,
             BindingResult bindingResult,
-            RedirectAttributes redirectAttributes) throws APIError {
+            RedirectAttributes redirectAttributes,
+            Model model) throws APIError {
 
         if (bindingResult.hasErrors()) {
-            return "registerGameForm";
+            // Add data back to model for form re-display
+            List<CategoryResponse> categoryResponses = categoryService.getFullCategories();
+            List<LanguageResponse> languageResponses = languageService.getFullLanguages();
+            model.addAttribute("languages", languageResponses);
+            model.addAttribute("categories", categoryResponses);
+            return "register_game_form";
         }
 
         try {
             gameService.registerGame(inputGameRequest);
             redirectAttributes.addFlashAttribute("toastSuccessMessage", "Game registered successfully!");
-            return "redirect:/api/games";
+            return "redirect:/games";
         } catch (InputException ex) {
             redirectAttributes.addFlashAttribute("toastErrorMessage", ex.getMessage());
-            return "redirect:/api/register";
+            return "redirect:/games/register";
         }
     }
 }

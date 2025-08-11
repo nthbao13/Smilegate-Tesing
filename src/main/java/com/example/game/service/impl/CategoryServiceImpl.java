@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class CategoryServiceImpl implements CategoryService {
@@ -24,7 +25,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public List<CategoryResponse> findAll() {
+    public List<CategoryResponse> getFullCategories() {
         List<Category> categories = categoryRepository.findAll();
         List<CategoryResponse> categoryResponses = categories.stream()
                 .map(category -> CategoryResponse.builder()
@@ -38,26 +39,17 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public boolean validateInputCategory(InputCategoryRequest request) {
-        if (request.getCategoryId() == 0) {
-            Category category = categoryRepository.findByCategoryName(request.getCategoryName());
-            if (request.getCategoryName().trim().isEmpty()) {
-                throw new InputException(ErrorCode.INVALID_CATEGORY_NAME);
-            }
-
-            if (category != null && category.getCategoryId() > 0) {
-                throw new InputException(ErrorCode.GAME_CATEGORY_EXISTS);
-            }
-        }
-
+        Category category = this.getCategoryById(request.getCategoryId());
         return true;
     }
 
     @Override
-    public Category findByCategoryName(String name) {
-        Category category = categoryRepository.findByCategoryName(name);
-        if (category == null) {
-            throw new CustomException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+    public Category getCategoryById(int categoryId) {
+        Optional<Category> category = categoryRepository.findById(categoryId);
+        if (!category.isPresent() || category.get().getCategoryId() < 0) {
+            throw new CustomException(ErrorCode.NOT_FOUND);
         }
-        return category;
+        return category.get();
     }
+
 }

@@ -22,6 +22,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -80,10 +82,11 @@ public class GameServiceImpl implements GameService {
     }
 
     private void validateInput(InputGameRequest inputGameRequest) throws APIError {
-        HashSet<InputGameNameRequest> gameNameRequests = inputGameRequest.getGameNameRequests();
+        List<InputGameNameRequest> gameNameRequests = inputGameRequest.getGameNameRequests();
         InputCategoryRequest categoryRequest = inputGameRequest.getCategoryRequest();
+        HashSet<InputGameNameRequest> gameNameRequestsSet = new HashSet<>(inputGameRequest.getGameNameRequests());
 
-        boolean checkGameName = languageService.validateLanguage(gameNameRequests);
+        boolean checkGameName = languageService.validateLanguage(gameNameRequestsSet);
         boolean checkCategory = categoryService.validateInputCategory(categoryRequest);
 
         if (this.isGameExist(inputGameRequest.getGameCode())) throw new InputException(ErrorCode.GAME_CODE_EXISTS);
@@ -94,22 +97,22 @@ public class GameServiceImpl implements GameService {
     }
 
     private Game mapToGameEntity(InputGameRequest inputGameRequest) {
-        Category category = categoryService.findByCategoryName(inputGameRequest
-                .getCategoryRequest().getCategoryName());
+        Category category = categoryService.getCategoryById(inputGameRequest
+                .getCategoryRequest().getCategoryId());
         Game newGame = Game.builder()
-                .category(category).build();
+                .category(category)
+                .gameCode(inputGameRequest.getGameCode()).build();
 
-        Set<GameName> gameNames = inputGameRequest.getGameNameRequests().stream()
+        List<GameName> gameNames = inputGameRequest.getGameNameRequests().stream()
                 .map(dto -> GameName.builder()
                         .name(dto.getName())
                         .isDefault(dto.isDefault())
                         .languageId(dto.getLanguageId())
                         .game(newGame)
                         .build()
-                )
-                .collect(Collectors.toSet());
+                ).toList();
 
-        newGame.setGameNames(new HashSet<>(gameNames));
+        newGame.setGameNames(new LinkedHashSet<>(gameNames));
 
         return newGame;
     }

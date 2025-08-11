@@ -33,7 +33,7 @@ public class LanguageServiceImpl implements LanguageService {
     @Autowired
     public LanguageServiceImpl(GameNameRepository gameNameRepository,
                                LanguageRepository languageRepository,
-                               @Value("${api.key.languages") String API_DETECT_LANGUAGE) {
+                               @Value("${api.key.languages}") String API_DETECT_LANGUAGE) {
         this.gameNameRepository = gameNameRepository;
         this.languageRepository = languageRepository;
         this.API_DETECT_LANGUAGE = API_DETECT_LANGUAGE;
@@ -73,9 +73,11 @@ public class LanguageServiceImpl implements LanguageService {
             List<Result> results = DetectLanguage.detect(request.getName());
 
             Result result = results.get(0);
-            if (!result.isReliable || !result.language.equals(request.getLanguageId()) || result.confidence < THRESH_HOLD) {
+            if (!result.isReliable || !result.language.toLowerCase().equals(request.getLanguageId().toLowerCase()) || result.confidence < THRESH_HOLD) {
                 ErrorCode errorCode = ErrorCode.GAME_LANGUAGE_ERROR;
-                errorCode.setMessage(errorCode.getMessage() + " " + request.getLanguageId());
+                errorCode.setMessage("This language is not correct " + request.getLanguageId() + " " +
+                        result.isReliable + " " + result.language + " " + result.confidence
+                + " " + request.getLanguageId());
                 throw new InputException(errorCode);
             }
         }

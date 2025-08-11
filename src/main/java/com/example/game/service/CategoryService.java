@@ -7,7 +7,7 @@ import com.example.game.entity.Category;
 import java.util.List;
 
 public interface CategoryService {
-    List<CategoryResponse> findAll();
+    List<CategoryResponse> getFullCategories();
     boolean validateInputCategory(InputCategoryRequest request);
-    public Category findByCategoryName(String name);
+    Category getCategoryById(int categoryId);
 }
