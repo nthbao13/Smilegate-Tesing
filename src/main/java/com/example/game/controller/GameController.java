@@ -164,7 +164,7 @@ public class GameController {
 
     @PostMapping("/bulk-delete")
     @ResponseBody
-    public ResponseEntity<?> deleteListOfGame(@RequestBody int[] ids) {
+    public ResponseEntity<?> deleteListOfGames(@RequestBody int[] ids) {
         try {
             if (ids == null || ids.length == 0) {
                 return ResponseEntity.badRequest().body("No IDs provided");

@@ -105,11 +105,10 @@
         <tbody>
         <tr th:each="game : ${games.content}" class="animate-slide-in">
           <td>
-          <td>
-          <input type="checkbox" class="form-check-input game-checkbox"
-                 th:value="${game.gameId}"
-                 th:attr="data-name=${game.gameName}, data-code=${game.gameCode}, data-category=${game.gameCategory}">
-        </td>
+            <input type="checkbox" class="form-check-input game-checkbox"
+                   th:value="${game.gameId}"
+                   th:attr="data-name=${game.gameName}, data-code=${game.gameCode}, data-category=${game.gameCategory}">
+          </td>
           <td>
             <span class="badge bg-secondary" th:text="${game.gameId}"></span>
           </td>
@@ -127,10 +126,6 @@
               <button class="btn btn-outline-primary btn-sm"
                       th:onclick="|editGame(${game.gameId})|">
                 <i class="fas fa-edit"></i>
-              </button>
-              <button class="btn btn-outline-danger btn-sm"
-                      th:onclick="|deleteGame(${game.gameId})|">
-                <i class="fas fa-trash"></i>
               </button>
             </div>
           </td>

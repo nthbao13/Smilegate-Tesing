@@ -22,6 +22,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -190,22 +191,38 @@ public class GameServiceImpl implements GameService {
     }
 
     private void updateGameNames(Set<GameName> oldGameNames, Set<GameName> newGameNames, Game game) {
-        oldGameNames.removeIf(old -> newGameNames.stream()
-                .noneMatch(n -> n.getLanguageId().equals(old.getLanguageId())));
+        boolean changed = false;
+
+        if (oldGameNames.removeIf(old -> newGameNames.stream()
+                .noneMatch(n -> n.getLanguageId().equals(old.getLanguageId())))) {
+            changed = true;
+        }
 
         for (GameName gn : newGameNames) {
             gn.setGame(game);
-            if (!oldGameNames.contains(gn)) {
-                oldGameNames.add(gn);
+            Optional<GameName> existing = oldGameNames.stream()
+                    .filter(o -> o.getLanguageId().equals(gn.getLanguageId()))
+                    .findFirst();
+
+            if (existing.isPresent()) {
+                GameName oldGn = existing.get();
+                if (!Objects.equals(oldGn.getName(), gn.getName()) ||
+                        oldGn.isDefault() != gn.isDefault()) {
+                    oldGn.setName(gn.getName());
+                    oldGn.setDefault(gn.isDefault());
+                    changed = true;
+                }
             } else {
-                oldGameNames.stream().filter(o -> o.equals(gn))
-                        .findFirst().ifPresent(o -> {
-                            o.setName(gn.getName());
-                            o.setDefault(gn.isDefault());
-                        });
+                oldGameNames.add(gn);
+                changed = true;
             }
         }
+
+        if (changed) {
+            game.setUpdateAt(LocalDateTime.now());
+        }
     }
+
 
     public void validateEditGame(InputGameRequest inputGameRequest, Game game) throws APIError {
         validateInput(inputGameRequest, true);

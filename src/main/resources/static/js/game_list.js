@@ -114,13 +114,6 @@
       window.location.href = `/api/games/${gameId}/edit`;
   }
 
-  function deleteGame(gameId) {
-      if (confirm('Are you sure you want to delete this game?')) {
-          // Implement single delete API call here
-          console.log('Deleting game:', gameId);
-      }
-  }
-
   // Auto-clear empty search inputs on page load
   document.addEventListener('DOMContentLoaded', function() {
       const urlParams = new URLSearchParams(window.location.search);

@@ -252,9 +252,6 @@ function attachLargeModalHandlers() {
         alert('No items selected.');
         return;
       }
-      if (!confirm(`Are you sure you want to delete ${arr.length} selected games? This action cannot be undone.`)) {
-        return;
-      }
 
       const ids = arr.map(x => x.id);
       sendBulkDeleteRequest(ids)
