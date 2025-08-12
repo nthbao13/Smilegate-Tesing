@@ -16,6 +16,7 @@ import com.example.game.service.CategoryService;
 import com.example.game.service.GameService;
 import com.example.game.service.LanguageService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -78,15 +79,9 @@ public class GameServiceImpl implements GameService {
 
     @Override
     public boolean editGame(InputGameRequest inputGameRequest) throws APIError {
-        validateInput(inputGameRequest, true);
         Game game = gameRepository.findByGameCode(inputGameRequest.getGameCode());
 
-        if (isGameExist(inputGameRequest.getGameCode()) && !inputGameRequest.getGameCode().equals(game.getGameCode()))
-            throw new InputException(ErrorCode.GAME_CODE_EXISTS);
-        if (game.getUpdateAt() != null && !game.getUpdateAt().isEqual(inputGameRequest.getUpdateAt())) {
-            throw new InputException(ErrorCode.GAME_UPDATED);
-        }
-
+        validateEditGame(inputGameRequest, game);
         Category category = categoryService.getCategoryById(inputGameRequest.getCategoryRequest().getCategoryId());
 
         Set<GameName> newGameNames = inputGameRequest.getGameNameRequests().stream().map(
@@ -97,21 +92,7 @@ public class GameServiceImpl implements GameService {
 
         Set<GameName> oldGameNames = game.getGameNames();
 
-        oldGameNames.removeIf(old -> newGameNames.stream()
-                .noneMatch(n -> n.getLanguageId().equals(old.getLanguageId())));
-
-        for (GameName gn : newGameNames) {
-            gn.setGame(game);
-            if (!oldGameNames.contains(gn)) {
-                oldGameNames.add(gn);
-            } else {
-                oldGameNames.stream().filter(o -> o.equals(gn))
-                        .findFirst().ifPresent(o -> {
-                            o.setName(gn.getName());
-                            o.setDefault(gn.isDefault());
-                        });
-            }
-        }
+        updateGameNames(oldGameNames, newGameNames, game);
 
         game.setGameNames(oldGameNames);
         game.setGameCode(inputGameRequest.getGameCode());
@@ -124,6 +105,16 @@ public class GameServiceImpl implements GameService {
         }
 
         return true;
+    }
+
+    @Override
+    public void deleteGamesByIds(int[] ids) {
+        for (int id : ids) {
+            try {
+                gameRepository.deleteById(id);
+            } catch (EmptyResultDataAccessException e) {
+            }
+        }
     }
 
     private Page<GameResponse> convertToDTOList(Page<Game> games) {
@@ -196,6 +187,33 @@ public class GameServiceImpl implements GameService {
                 .gameCode(game.getGameCode())
                 .updateAt(game.getUpdateAt())
                 .build();
+    }
+
+    private void updateGameNames(Set<GameName> oldGameNames, Set<GameName> newGameNames, Game game) {
+        oldGameNames.removeIf(old -> newGameNames.stream()
+                .noneMatch(n -> n.getLanguageId().equals(old.getLanguageId())));
+
+        for (GameName gn : newGameNames) {
+            gn.setGame(game);
+            if (!oldGameNames.contains(gn)) {
+                oldGameNames.add(gn);
+            } else {
+                oldGameNames.stream().filter(o -> o.equals(gn))
+                        .findFirst().ifPresent(o -> {
+                            o.setName(gn.getName());
+                            o.setDefault(gn.isDefault());
+                        });
+            }
+        }
+    }
+
+    public void validateEditGame(InputGameRequest inputGameRequest, Game game) throws APIError {
+        validateInput(inputGameRequest, true);
+        if (isGameExist(inputGameRequest.getGameCode()) && !inputGameRequest.getGameCode().equals(game.getGameCode()))
+            throw new InputException(ErrorCode.GAME_CODE_EXISTS);
+        if (game.getUpdateAt() != null && !game.getUpdateAt().isEqual(inputGameRequest.getUpdateAt())) {
+            throw new InputException(ErrorCode.GAME_UPDATED);
+        }
     }
 
 }

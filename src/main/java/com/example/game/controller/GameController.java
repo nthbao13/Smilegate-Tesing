@@ -14,6 +14,8 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +24,7 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
+import java.util.Map;
 
 
 @Slf4j
@@ -156,6 +159,21 @@ public class GameController {
             model.addAttribute("mode", "edit");
             model.addAttribute("formAction", "/games/" + inputGameRequest.getId() + "/edit");
             return "redirect:/games/" + inputGameRequest.getId() + "/edit";
+        }
+    }
+
+    @PostMapping("/bulk-delete")
+    @ResponseBody
+    public ResponseEntity<?> deleteListOfGame(@RequestBody int[] ids) {
+        try {
+            if (ids == null || ids.length == 0) {
+                return ResponseEntity.badRequest().body("No IDs provided");
+            }
+            gameService.deleteGamesByIds(ids);
+            return ResponseEntity.ok(Map.of("message", "Deleted " + ids.length + " games successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error deleting games: " + e.getMessage());
         }
     }
 }

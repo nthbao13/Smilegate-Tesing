@@ -15,4 +15,5 @@ public interface GameService {
     public boolean isGameExist(String gameCode);
     public InputGameRequest getGameRequestById(int id);
     public boolean editGame(InputGameRequest inputGameRequest) throws APIError;
+    public void deleteGamesByIds(int[] ids);
 }
