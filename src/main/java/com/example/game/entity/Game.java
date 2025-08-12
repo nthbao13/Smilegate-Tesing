@@ -21,10 +21,11 @@ public class Game extends BaseEntity {
 
     private String gameCode;
 
-    @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
+    @ManyToOne(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "category_id", referencedColumnName = "categoryId")
     private Category category;
 
-    @OneToMany(mappedBy = "game", fetch = FetchType.EAGER, cascade = CascadeType.ALL, targetEntity = GameName.class)
+    @OneToMany(mappedBy = "game", fetch = FetchType.EAGER, cascade = CascadeType.ALL,
+            targetEntity = GameName.class, orphanRemoval = true)
     private Set<GameName> gameNames = new HashSet<>();
 }

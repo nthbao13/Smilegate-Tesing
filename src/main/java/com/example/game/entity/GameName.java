@@ -33,7 +33,7 @@ public class GameName extends BaseEntity {
         if (!(o instanceof GameName)) return false;
         GameName that = (GameName) o;
         return Objects.equals(languageId, that.languageId) &&
-                Objects.equals(game, that.game);
+                Objects.equals(name, that.name);
     }
 
     @Override

@@ -111,7 +111,7 @@
   });
 
   function editGame(gameId) {
-      window.location.href = `/api/games/edit/${gameId}`;
+      window.location.href = `/api/games/${gameId}/edit`;
   }
 
   function deleteGame(gameId) {

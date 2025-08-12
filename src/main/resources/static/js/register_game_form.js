@@ -1,9 +1,13 @@
-// Available languages from server
-const availableLanguages = /*[[${languages}]]*/ [
+// Get data from server (passed via window.serverData)
+const availableLanguages = window.serverData?.languages || [
   { languageId: "EN", languageName: "English" },
   { languageId: "KO", languageName: "Korean" },
   { languageId: "JA", languageName: "Japanese" },
 ];
+
+// Existing data for edit mode
+const existingGameData = window.serverData?.inputGameRequest || null;
+const isEditMode = window.serverData?.mode === 'edit';
 
 let languageEntries = [];
 let languageCounter = 0;
@@ -11,6 +15,14 @@ let languageCounter = 0;
 // Initialize the form
 document.addEventListener("DOMContentLoaded", function () {
   populateLanguageModal();
+
+  // Initialize form based on mode
+  if (isEditMode && existingGameData) {
+    initializeEditMode();
+  } else {
+    initializeRegisterMode();
+  }
+
   updateAddLanguageButton();
 
   // Auto-hide toasts
@@ -21,6 +33,44 @@ document.addEventListener("DOMContentLoaded", function () {
     }, 5000);
   });
 });
+
+function initializeEditMode() {
+  console.log('Initializing edit mode with data:', existingGameData);
+
+  // Populate existing language entries if available
+  if (existingGameData && existingGameData.gameNameRequests && existingGameData.gameNameRequests.length > 0) {
+    existingGameData.gameNameRequests.forEach((gameNameRequest, index) => {
+      if (gameNameRequest && gameNameRequest.languageId && gameNameRequest.name) {
+        const languageName = availableLanguages.find(
+          lang => lang.languageId === gameNameRequest.languageId
+        )?.languageName || gameNameRequest.languageId;
+
+        const newEntry = {
+          id: languageCounter++,
+          languageId: gameNameRequest.languageId,
+          languageName: languageName,
+          gameName: gameNameRequest.name,
+          isDefault: gameNameRequest.isDefault || false
+        };
+
+        languageEntries.push(newEntry);
+      }
+    });
+
+    // Ensure at least one entry is default if none is set
+    if (languageEntries.length > 0 && !languageEntries.some(entry => entry.isDefault)) {
+      languageEntries[0].isDefault = true;
+    }
+
+    renderLanguageEntries();
+  }
+}
+
+function initializeRegisterMode() {
+  // Start with empty form for registration
+  languageEntries = [];
+  languageCounter = 0;
+}
 
 function populateLanguageModal() {
   const modalLanguageSelect = document.getElementById("modalLanguage");
@@ -139,7 +189,9 @@ function renderLanguageEntries() {
     entryDiv.className = `language-entry ${
       entry.isDefault ? "default-language" : ""
     }`;
-    if (index === languageEntries.length - 1) {
+
+    // Only add 'new' class for newly added entries, not for edit mode initialization
+    if (index === languageEntries.length - 1 && !isEditMode) {
       entryDiv.classList.add("new");
     }
 
@@ -156,7 +208,7 @@ function renderLanguageEntries() {
             <input type="text"
                    class="form-control"
                    name="gameNameRequests[${index}].name"
-                   value="${entry.gameName}"
+                   value="${entry.gameName.replace(/"/g, '&quot;')}"
                    onchange="updateLanguageEntryName(${entry.id}, this.value)"
                    placeholder="Game name in ${entry.languageName}"
                    required>
@@ -193,11 +245,11 @@ function renderLanguageEntries() {
     container.appendChild(entryDiv);
   });
 
-  // *** QUAN TRỌNG: Cập nhật lại tất cả giá trị isDefault sau khi render ***
+  // Update all isDefault inputs after rendering
   updateAllIsDefaultInputs();
 }
 
-// *** HÀM MỚI: Cập nhật tất cả input isDefault ***
+// Update all isDefault input values
 function updateAllIsDefaultInputs() {
   const isDefaultInputs = document.querySelectorAll('.isDefault-input');
   isDefaultInputs.forEach((input, index) => {
@@ -228,15 +280,24 @@ function updateAddLanguageButton() {
 }
 
 function resetForm() {
-  if (
-    confirm(
-      "Are you sure you want to reset the form? All entered data will be lost."
-    )
-  ) {
-    document.getElementById("gameRegistrationForm").reset();
-    languageEntries = [];
-    languageCounter = 0;
-    renderLanguageEntries();
+  const confirmMessage = isEditMode
+    ? "Are you sure you want to reset the form? All changes will be lost and the form will be restored to original values."
+    : "Are you sure you want to reset the form? All entered data will be lost.";
+
+  if (confirm(confirmMessage)) {
+    if (isEditMode) {
+      // Reset to original data for edit mode
+      document.getElementById("gameRegistrationForm").reset();
+      languageEntries = [];
+      languageCounter = 0;
+      initializeEditMode(); // Re-initialize with original data
+    } else {
+      // Clear everything for register mode
+      document.getElementById("gameRegistrationForm").reset();
+      languageEntries = [];
+      languageCounter = 0;
+      renderLanguageEntries();
+    }
     updateAddLanguageButton();
     clearValidationErrors();
   }
@@ -291,9 +352,12 @@ document
       isValid = false;
     }
 
-    document.querySelectorAll('.isDefault-input').forEach((input, idx) => {
-      console.log(`Input ${idx} isDefault value:`, input.value);
-    });
+    // Debug logging
+    if (console && console.log) {
+      document.querySelectorAll('.isDefault-input').forEach((input, idx) => {
+        console.log(`Input ${idx} isDefault value:`, input.value);
+      });
+    }
 
     if (!isValid) {
       e.preventDefault();

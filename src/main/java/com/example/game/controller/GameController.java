@@ -61,10 +61,15 @@ public class GameController {
     }
 
     @GetMapping("/register")
-    public ModelAndView displayRegisterPage(Model model) {
+    public ModelAndView showRegisterForm(Model model) {
         ModelAndView modelAndView = new ModelAndView("register_game_form.html");
+
         List<CategoryResponse> categoryResponses = categoryService.getFullCategories();
         List<LanguageResponse> languageResponses = languageService.getFullLanguages();
+
+        model.addAttribute("mode", "register");
+        model.addAttribute("formAction", "/games/register");
+
         modelAndView.addObject("languages", languageResponses);
         modelAndView.addObject("categories", categoryResponses);
         modelAndView.addObject("inputGameRequest", new InputGameRequest());
@@ -82,8 +87,12 @@ public class GameController {
             // Add data back to model for form re-display
             List<CategoryResponse> categoryResponses = categoryService.getFullCategories();
             List<LanguageResponse> languageResponses = languageService.getFullLanguages();
+
+            model.addAttribute("mode", "register");
+            model.addAttribute("formAction", "/games/register");
             model.addAttribute("languages", languageResponses);
             model.addAttribute("categories", categoryResponses);
+
             return "register_game_form";
         }
 
@@ -93,7 +102,60 @@ public class GameController {
             return "redirect:/games";
         } catch (InputException ex) {
             redirectAttributes.addFlashAttribute("toastErrorMessage", ex.getMessage());
+            model.addAttribute("mode", "register");
+            model.addAttribute("formAction", "/games/register");
             return "redirect:/games/register";
+        }
+    }
+
+    @GetMapping("/{id}/edit")
+    public ModelAndView showEditForm(Model model, @PathVariable("id") Integer id) {
+        InputGameRequest inputGameRequest = gameService.getGameRequestById(id);
+        ModelAndView modelAndView = new ModelAndView("register_game_form.html");
+
+        model.addAttribute("mode", "edit");
+        model.addAttribute("formAction", "/games/" + id + "/edit");
+
+        List<CategoryResponse> categoryResponses = categoryService.getFullCategories();
+        List<LanguageResponse> languageResponses = languageService.getFullLanguages();
+
+        modelAndView.addObject("languages", languageResponses);
+        modelAndView.addObject("categories", categoryResponses);
+        modelAndView.addObject("inputGameRequest", inputGameRequest);
+
+        return modelAndView;
+    }
+
+    @PostMapping("/{id}/edit")
+    public String editGame(
+            @PathVariable("id") int id,
+            @Valid @ModelAttribute("inputGameRequest") InputGameRequest inputGameRequest,
+            BindingResult bindingResult,
+            RedirectAttributes redirectAttributes,
+            Model model
+    ) throws APIError {
+        if (bindingResult.hasErrors()) {
+            List<CategoryResponse> categoryResponses = categoryService.getFullCategories();
+            List<LanguageResponse> languageResponses = languageService.getFullLanguages();
+
+            model.addAttribute("languages", languageResponses);
+            model.addAttribute("categories", categoryResponses);
+            model.addAttribute("mode", "edit");
+            model.addAttribute("formAction", "/games/" + id + "/edit");
+
+            return "register_game_form";
+        }
+
+        try {
+            gameService.editGame(inputGameRequest);
+            redirectAttributes.addFlashAttribute("toastSuccessMessage", "Game edited successfully!");
+            return "redirect:/games";
+        } catch (InputException ex) {
+            redirectAttributes.addFlashAttribute("toastErrorMessage", ex.getMessage());
+
+            model.addAttribute("mode", "edit");
+            model.addAttribute("formAction", "/games/" + inputGameRequest.getId() + "/edit");
+            return "redirect:/games/" + inputGameRequest.getId() + "/edit";
         }
     }
 }

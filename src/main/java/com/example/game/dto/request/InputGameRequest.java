@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -18,6 +19,8 @@ import java.util.List;
 @AllArgsConstructor
 public class InputGameRequest {
 
+    private int id;
+
     @NotBlank(message = "Game Code must not be empty")
     @Size(min = 5, message = "Game Code must be at least 5 characters")
     private String gameCode;
@@ -27,4 +30,6 @@ public class InputGameRequest {
 
     @NotNull(message = "Please insert at least 1 language")
     private List<InputGameNameRequest> gameNameRequests = new ArrayList<>();
+
+    private LocalDateTime updateAt;
 }

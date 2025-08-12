@@ -11,7 +11,8 @@ public enum ErrorCode {
     GAME_LANGUAGE_ERROR(1001, "This language is not correct", HttpStatus.BAD_REQUEST),
     GAME_CATEGORY_EXISTS(1002, "This category is existed", HttpStatus.BAD_REQUEST),
     INVALID_CATEGORY_NAME(1003, "Invalid category name", HttpStatus.BAD_REQUEST),
-    NOT_FOUND(1004, "Not found", HttpStatus.NOT_FOUND)
+    NOT_FOUND(1004, "Not found", HttpStatus.NOT_FOUND),
+    GAME_UPDATED(1005, "This game was updated before, reload page to see", HttpStatus.CONFLICT);
     ;
 
     private int code;

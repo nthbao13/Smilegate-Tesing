@@ -21,10 +21,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -50,7 +47,7 @@ public class GameServiceImpl implements GameService {
 
     @Override
     public boolean registerGame(InputGameRequest inputGameRequest) throws APIError {
-        validateInput(inputGameRequest);
+        validateInput(inputGameRequest, false);
         Game newGame = mapToGameEntity(inputGameRequest);
         Game savedGame = gameRepository.save(newGame);
 
@@ -69,6 +66,66 @@ public class GameServiceImpl implements GameService {
         return false;
     }
 
+    @Override
+    public InputGameRequest getGameRequestById(int id) {
+        Optional<Game> game = gameRepository.findById(id);
+        if (!game.isPresent() || game.get().getGameId() < 1) {
+            throw new CustomException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+
+        return maptoInputGameRequest(game.get());
+    }
+
+    @Override
+    public boolean editGame(InputGameRequest inputGameRequest) throws APIError {
+        validateInput(inputGameRequest, true);
+        Game game = gameRepository.findByGameCode(inputGameRequest.getGameCode());
+
+        if (isGameExist(inputGameRequest.getGameCode()) && !inputGameRequest.getGameCode().equals(game.getGameCode()))
+            throw new InputException(ErrorCode.GAME_CODE_EXISTS);
+        if (game.getUpdateAt() != null && !game.getUpdateAt().isEqual(inputGameRequest.getUpdateAt())) {
+            throw new InputException(ErrorCode.GAME_UPDATED);
+        }
+
+        Category category = categoryService.getCategoryById(inputGameRequest.getCategoryRequest().getCategoryId());
+
+        Set<GameName> newGameNames = inputGameRequest.getGameNameRequests().stream().map(
+                gameName -> GameName.builder().name(gameName.getName())
+                        .isDefault(gameName.isDefault())
+                        .languageId(gameName.getLanguageId()).build()
+        ).collect(Collectors.toSet());
+
+        Set<GameName> oldGameNames = game.getGameNames();
+
+        oldGameNames.removeIf(old -> newGameNames.stream()
+                .noneMatch(n -> n.getLanguageId().equals(old.getLanguageId())));
+
+        for (GameName gn : newGameNames) {
+            gn.setGame(game);
+            if (!oldGameNames.contains(gn)) {
+                oldGameNames.add(gn);
+            } else {
+                oldGameNames.stream().filter(o -> o.equals(gn))
+                        .findFirst().ifPresent(o -> {
+                            o.setName(gn.getName());
+                            o.setDefault(gn.isDefault());
+                        });
+            }
+        }
+
+        game.setGameNames(oldGameNames);
+        game.setGameCode(inputGameRequest.getGameCode());
+        game.setCategory(category);
+
+        Game gameSaved = gameRepository.save(game);
+
+        if (gameSaved == null || gameSaved.getGameId() < 0) {
+            throw new CustomException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+
+        return true;
+    }
+
     private Page<GameResponse> convertToDTOList(Page<Game> games) {
         return games.map(this::convertToDTO);
     }
@@ -82,7 +139,7 @@ public class GameServiceImpl implements GameService {
                 .build();
     }
 
-    private void validateInput(InputGameRequest inputGameRequest) throws APIError {
+    private void validateInput(InputGameRequest inputGameRequest, boolean isEdit) throws APIError {
         List<InputGameNameRequest> gameNameRequests = inputGameRequest.getGameNameRequests();
         InputCategoryRequest categoryRequest = inputGameRequest.getCategoryRequest();
         HashSet<InputGameNameRequest> gameNameRequestsSet = new HashSet<>(inputGameRequest.getGameNameRequests());
@@ -90,7 +147,7 @@ public class GameServiceImpl implements GameService {
         boolean checkGameName = languageService.validateLanguage(gameNameRequestsSet);
         boolean checkCategory = categoryService.validateInputCategory(categoryRequest);
 
-        if (this.isGameExist(inputGameRequest.getGameCode())) throw new InputException(ErrorCode.GAME_CODE_EXISTS);
+        if (!isEdit && this.isGameExist(inputGameRequest.getGameCode())) throw new InputException(ErrorCode.GAME_CODE_EXISTS);
 
         if (!checkCategory || !checkGameName) {
             throw new CustomException(ErrorCode.UNCATEGORIZED_EXCEPTION);
@@ -116,6 +173,29 @@ public class GameServiceImpl implements GameService {
         newGame.setGameNames(new LinkedHashSet<>(gameNames));
 
         return newGame;
+    }
+
+    private InputGameRequest maptoInputGameRequest(Game game) {
+        InputCategoryRequest categoryRequest = InputCategoryRequest.builder()
+                .categoryId(game.getCategory().getCategoryId())
+                .categoryName(game.getCategory().getCategoryName())
+                .build();
+
+        List<InputGameNameRequest> gameNameRequests = game.getGameNames().stream().map(
+                entity -> InputGameNameRequest.builder()
+                        .name(entity.getName())
+                        .languageId(entity.getLanguageId())
+                        .isDefault(entity.isDefault())
+                        .build()
+        ).collect(Collectors.toSet()).stream().toList();
+
+        return InputGameRequest.builder()
+                .categoryRequest(categoryRequest)
+                .gameNameRequests(gameNameRequests)
+                .id(game.getGameId())
+                .gameCode(game.getGameCode())
+                .updateAt(game.getUpdateAt())
+                .build();
     }
 
 }
