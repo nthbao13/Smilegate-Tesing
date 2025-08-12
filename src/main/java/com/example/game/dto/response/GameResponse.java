@@ -8,5 +8,6 @@ import lombok.Data;
 public class GameResponse {
     private int gameId;
     String gameName;
+    String gameCategory;
     String gameCode;
 }

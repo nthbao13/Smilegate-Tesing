@@ -17,5 +17,9 @@ public class InputGameNameRequest {
     private String name;
     @NotNull(message = "Please choose language corresponding")
     private String languageId;
-    private boolean isDefault;
+    private Boolean isDefault;
+
+    public boolean isDefault() {
+        return this.isDefault;
+    }
 }

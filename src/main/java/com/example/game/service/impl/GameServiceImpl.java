@@ -44,7 +44,7 @@ public class GameServiceImpl implements GameService {
     @Override
     public Page<GameResponse> getGames(int page, int pageSize, String keyword, Integer categoryId) {
         Pageable pageable = PageRequest.of(page - 1, pageSize);
-        Page<Game> games = gameRepository.searchGames(keyword, categoryId,pageable);
+        Page<Game> games = gameRepository.searchGames(keyword, categoryId, pageable);
         return convertToDTOList(games);
     }
 
@@ -78,6 +78,7 @@ public class GameServiceImpl implements GameService {
                 .gameId(game.getGameId())
                 .gameName(languageService.getDefaultName(game))
                 .gameCode(game.getGameCode())
+                .gameCategory(game.getCategory().getCategoryName())
                 .build();
     }
 
