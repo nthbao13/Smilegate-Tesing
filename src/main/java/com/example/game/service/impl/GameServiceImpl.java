@@ -1,6 +1,5 @@
 package com.example.game.service.impl;
 
-import com.detectlanguage.errors.APIError;
 import com.example.game.dto.request.InputCategoryRequest;
 import com.example.game.dto.request.InputGameNameRequest;
 import com.example.game.dto.request.InputGameRequest;
@@ -48,30 +47,26 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
-    public boolean registerGame(InputGameRequest inputGameRequest) throws APIError {
+    public void registerGame(InputGameRequest inputGameRequest) {
         validateInput(inputGameRequest, false);
         Game newGame = mapToGameEntity(inputGameRequest);
         Game savedGame = gameRepository.save(newGame);
 
-        if (savedGame == null || savedGame.getGameId() < 0) {
+        if (savedGame.getGameId() < 0) {
             throw new CustomException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
-        return true;
     }
 
     @Override
     public boolean isGameExist(String gameCode) {
         Game game = gameRepository.findByGameCode(gameCode);
-        if (game != null && game.getGameId() > 0) {
-            return  true;
-        }
-        return false;
+        return game != null && game.getGameId() > 0;
     }
 
     @Override
     public InputGameRequest getGameRequestById(int id) {
         Optional<Game> game = gameRepository.findById(id);
-        if (!game.isPresent() || game.get().getGameId() < 1) {
+        if (game.isEmpty() || game.get().getGameId() < 1) {
             throw new CustomException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
 
@@ -79,7 +74,7 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
-    public boolean editGame(InputGameRequest inputGameRequest) throws APIError {
+    public void editGame(InputGameRequest inputGameRequest) {
         Game game = gameRepository.findByGameCode(inputGameRequest.getGameCode());
 
         validateEditGame(inputGameRequest, game);
@@ -101,11 +96,10 @@ public class GameServiceImpl implements GameService {
 
         Game gameSaved = gameRepository.save(game);
 
-        if (gameSaved == null || gameSaved.getGameId() < 0) {
+        if (gameSaved.getGameId() < 0) {
             throw new CustomException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
 
-        return true;
     }
 
     @Override
@@ -113,7 +107,7 @@ public class GameServiceImpl implements GameService {
         for (int id : ids) {
             try {
                 gameRepository.deleteById(id);
-            } catch (EmptyResultDataAccessException e) {
+            } catch (EmptyResultDataAccessException ignored) {
             }
         }
     }
@@ -131,19 +125,13 @@ public class GameServiceImpl implements GameService {
                 .build();
     }
 
-    private void validateInput(InputGameRequest inputGameRequest, boolean isEdit) throws APIError {
-        List<InputGameNameRequest> gameNameRequests = inputGameRequest.getGameNameRequests();
-        InputCategoryRequest categoryRequest = inputGameRequest.getCategoryRequest();
-        HashSet<InputGameNameRequest> gameNameRequestsSet = new HashSet<>(inputGameRequest.getGameNameRequests());
-
-        boolean checkGameName = languageService.validateLanguage(gameNameRequestsSet);
-        boolean checkCategory = categoryService.validateInputCategory(categoryRequest);
+    private void validateInput(InputGameRequest inputGameRequest, boolean isEdit) {
+//        HashSet<InputGameNameRequest> gameNameRequestsSet = new HashSet<>(inputGameRequest.getGameNameRequests());
+//        if (!languageService.validateLanguage(gameNameRequestsSet)) {
+//            throw new CustomException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+//        }
 
         if (!isEdit && this.isGameExist(inputGameRequest.getGameCode())) throw new InputException(ErrorCode.GAME_CODE_EXISTS);
-
-        if (!checkCategory || !checkGameName) {
-            throw new CustomException(ErrorCode.UNCATEGORIZED_EXCEPTION);
-        }
     }
 
     private Game mapToGameEntity(InputGameRequest inputGameRequest) {
@@ -191,12 +179,8 @@ public class GameServiceImpl implements GameService {
     }
 
     private void updateGameNames(Set<GameName> oldGameNames, Set<GameName> newGameNames, Game game) {
-        boolean changed = false;
-
-        if (oldGameNames.removeIf(old -> newGameNames.stream()
-                .noneMatch(n -> n.getLanguageId().equals(old.getLanguageId())))) {
-            changed = true;
-        }
+        boolean changed = oldGameNames.removeIf(old -> newGameNames.stream()
+                .noneMatch(n -> n.getLanguageId().equals(old.getLanguageId())));
 
         for (GameName gn : newGameNames) {
             gn.setGame(game);
@@ -224,7 +208,7 @@ public class GameServiceImpl implements GameService {
     }
 
 
-    public void validateEditGame(InputGameRequest inputGameRequest, Game game) throws APIError {
+    public void validateEditGame(InputGameRequest inputGameRequest, Game game) {
         validateInput(inputGameRequest, true);
         if (isGameExist(inputGameRequest.getGameCode()) && !inputGameRequest.getGameCode().equals(game.getGameCode()))
             throw new InputException(ErrorCode.GAME_CODE_EXISTS);

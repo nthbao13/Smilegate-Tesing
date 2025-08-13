@@ -36,23 +36,24 @@ public class GameController {
     private final CategoryService categoryService;
     private final LanguageService languageService;
 
+    private final List<CategoryResponse> categoryResponses;
+
     @Autowired
-    public GameController(GameService gameService, CategoryService categoryService,
+    public GameController(GameService gameService,
+                          CategoryService categoryService,
                           LanguageService languageService) {
         this.gameService = gameService;
         this.categoryService = categoryService;
         this.languageService = languageService;
+        this.categoryResponses = categoryService.getFullCategories();
     }
 
     @GetMapping
-    public ModelAndView displayGameList(Model model, @RequestParam(value = "page", defaultValue = "1") Integer page,
+    public ModelAndView displayGameList(@RequestParam(value = "page", defaultValue = "1") Integer page,
                                         @RequestParam(value = "keyword", required = false) String keyword,
                                         @RequestParam(value = "category", required = false) Integer category) {
         ModelAndView modelAndView = new ModelAndView("game_list.html");
-        int pageSize = Constants.PAGE_LIMIT;
-
-        List<CategoryResponse> categoryResponses = categoryService.getFullCategories();
-        Page<GameResponse> gameDTOS = gameService.getGames(page, pageSize, keyword, category);
+        Page<GameResponse> gameDTOS = gameService.getGames(page, Constants.PAGE_LIMIT, keyword, category);
 
         modelAndView.addObject("categories", categoryResponses);
         modelAndView.addObject("games", gameDTOS);
@@ -84,10 +85,9 @@ public class GameController {
             @Valid @ModelAttribute("inputGameRequest") InputGameRequest inputGameRequest,
             BindingResult bindingResult,
             RedirectAttributes redirectAttributes,
-            Model model) throws APIError {
+            Model model) {
 
         if (bindingResult.hasErrors()) {
-            // Add data back to model for form re-display
             List<CategoryResponse> categoryResponses = categoryService.getFullCategories();
             List<LanguageResponse> languageResponses = languageService.getFullLanguages();
 
