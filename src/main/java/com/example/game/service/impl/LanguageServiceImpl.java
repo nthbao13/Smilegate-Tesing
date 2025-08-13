@@ -75,9 +75,7 @@ public class LanguageServiceImpl implements LanguageService {
             Result result = results.get(0);
             if (!result.isReliable || !result.language.toLowerCase().equals(request.getLanguageId().toLowerCase()) || result.confidence < THRESH_HOLD) {
                 ErrorCode errorCode = ErrorCode.GAME_LANGUAGE_ERROR;
-                errorCode.setMessage("This language is not correct " + request.getLanguageId() + " " +
-                        result.isReliable + " " + result.language + " " + result.confidence
-                + " " + request.getLanguageId());
+                errorCode.setMessage("This language is not correct " + request.getLanguageId());
                 throw new InputException(errorCode);
             }
         }
