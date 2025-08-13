@@ -7,10 +7,7 @@ import com.example.game.entity.Language;
 import com.example.game.repository.LanguageRepository;
 import com.example.game.service.LanguageService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
-import com.detectlanguage.DetectLanguage;
 
 import java.util.List;
 import java.util.Set;
@@ -21,10 +18,8 @@ public class LanguageServiceImpl implements LanguageService {
     private final LanguageRepository languageRepository;
 
     @Autowired
-    public LanguageServiceImpl(LanguageRepository languageRepository,
-                               @Value("${api.key.languages}") String API_DETECT_LANGUAGE) {
+    public LanguageServiceImpl(LanguageRepository languageRepository) {
         this.languageRepository = languageRepository;
-        DetectLanguage.apiKey = API_DETECT_LANGUAGE;
     }
 
     @Override
