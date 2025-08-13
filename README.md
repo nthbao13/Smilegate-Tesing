@@ -35,7 +35,6 @@ Một hệ thống quản lý game đa ngôn ngữ được xây dựng bằng S
 - **Java 17** hoặc cao hơn
 - **Maven 3.6+**
 - **MySQL 8.0+**
-- **Node.js** (tùy chọn, cho development tools)
 
 ## 🔧 Cài đặt và chạy
 
