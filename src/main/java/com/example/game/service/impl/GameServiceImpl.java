@@ -20,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -47,6 +48,7 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
+    @Transactional
     public void registerGame(InputGameRequest inputGameRequest) {
         validateInput(inputGameRequest, false);
         Game newGame = mapToGameEntity(inputGameRequest);
@@ -74,6 +76,7 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
+    @Transactional
     public void editGame(InputGameRequest inputGameRequest) {
         Game game = gameRepository.findByGameCode(inputGameRequest.getGameCode());
 
