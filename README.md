@@ -40,7 +40,7 @@ Một hệ thống quản lý game đa ngôn ngữ được xây dựng bằng S
 
 ### 1. Clone repository
 ```bash
-git clone <repository-url>
+git clone https://github.com/nthbao13/Smilegate-Testing
 cd game-management-system
 ```
 
